@@ -27,7 +27,7 @@ import {
 import type { DraftControls } from '../draft/useDraft.ts'
 import type { Design } from '../designs/types.ts'
 import type { Selection } from './Board.tsx'
-import { describeEdit, layerName } from './layers.ts'
+import { describeEdit, labelOf, layerName } from './layers.ts'
 
 export interface InspectorProps {
   design: Design
@@ -213,7 +213,12 @@ function ElementFields({ controls, selection, onSelect, documentOf }: ElementFie
     )
 
   const edit = (change: Change) =>
-    controls.addEdit({ ...change, screen: selection.screen, node: selection.node } as Edit)
+    controls.addEdit({
+      ...change,
+      screen: selection.screen,
+      node: selection.node,
+      label: labelOf(element, change.kind),
+    } as Edit)
   const clear = (kind: Edit['kind']) =>
     controls.removeEdits((e) => sameTarget(e, { ...selection, kind } as Edit))
   const parent = selection.node.includes('.')
@@ -245,12 +250,12 @@ function ElementFields({ controls, selection, onSelect, documentOf }: ElementFie
           // a new element or a new text edit starts the field over from the screen's text
           key={`${selection.screen}/${selection.node}/${textEdit?.kind === 'text' ? textEdit.value : ''}`}
           label="Text"
-          defaultValue={element.textContent ?? ''}
+          defaultValue={textEdit?.kind === 'text' ? textEdit.value : (element.textContent ?? '')}
           onBlur={(event) => {
             const text = event.target.value
+            const shown = textEdit?.kind === 'text' ? textEdit.value : element.textContent
             const was = textEdit?.kind === 'text' ? textEdit.was : (element.textContent ?? '')
-            if (text.trim() && text !== element.textContent)
-              edit({ kind: 'text', value: text, was })
+            if (text.trim() && text !== shown) edit({ kind: 'text', value: text, was })
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur()

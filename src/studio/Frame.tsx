@@ -110,7 +110,10 @@ export function Frame({
 
     const block = (event: Event) => {
       const element = event.target as Element | null
-      if (element && editing()?.contains(element)) return
+      const open = editing() as HTMLElement | null
+      if (open?.contains(element)) return
+      // a press outside the text being typed finishes it, as focus would have moved
+      open?.blur()
       event.preventDefault()
       event.stopPropagation()
     }
@@ -125,7 +128,7 @@ export function Frame({
     const doubleClick = (event: Event) => {
       block(event)
       const element = target(event) as HTMLElement | undefined
-      if (!element || !isTextNode(element)) return
+      if (!element || element.isContentEditable || !isTextNode(element)) return
       const node = pathOf(element, root)
       if (!node) return
       applier.remember(element)
@@ -186,7 +189,10 @@ export function Frame({
         title={screen.name}
         style={frame}
         loading={mode === 'static' ? 'lazy' : 'eager'}
+        // a preview is a picture of the screen: out of the tab order and the reading order
         tabIndex={mode === 'static' ? -1 : undefined}
+        aria-hidden={mode === 'static' ? true : undefined}
+        inert={mode === 'static'}
       />
     </div>
   )

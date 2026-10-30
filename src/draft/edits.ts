@@ -9,6 +9,8 @@ interface EditBase {
   screen: string
   /** The node's path in the screen */
   node: string
+  /** How a person knows the node, from when the edit was made: its layer and some of its text */
+  label?: string
 }
 
 export type StyleKind = 'color' | 'background' | 'padding' | 'gap' | 'radius'
@@ -70,7 +72,9 @@ export class Applier {
     for (const [element, original] of this.#originals) {
       if (original.style === null) element.removeAttribute('style')
       else element.setAttribute('style', original.style)
-      if (original.text !== null) element.textContent = original.text
+      // only text that differs is written back, so React's own text nodes stay where they can
+      if (original.text !== null && element.textContent !== original.text)
+        element.textContent = original.text
     }
     const missing: Edit[] = []
     for (const edit of edits) {

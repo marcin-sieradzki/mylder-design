@@ -21,6 +21,8 @@ export interface BoardProps {
   tweaks: Readonly<Record<string, string>>
   edits: readonly Edit[]
   showExplorations: boolean
+  /** Changes when every screen should load afresh */
+  visit: number
   selection?: Selection
   onSelect: (selection: Selection | undefined) => void
   onTextEdit: (screen: string, node: string, text: string, was: string) => void
@@ -36,10 +38,14 @@ export function Board(props: BoardProps) {
   const board = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
 
+  // the screens' height fits the board, and the widest screen its width
   const fit = useCallback(() => {
     const height = board.current?.clientHeight ?? 0
+    const width = board.current?.clientWidth ?? 0
     const tallest = Math.max(...design.screens.map((s) => DEVICE_SIZE[s.device].height))
-    if (height > 0) setScale(Math.min(1, Math.max(0.2, (height - LABEL_ROOM) / tallest)))
+    const widest = Math.max(...design.screens.map((s) => DEVICE_SIZE[s.device].width))
+    const fits = Math.min((height - LABEL_ROOM) / tallest, (width - LABEL_ROOM) / widest)
+    if (height > 0) setScale(Math.min(1, Math.max(0.2, fits)))
   }, [design.screens])
 
   useLayoutEffect(fit, [fit])
@@ -56,7 +62,12 @@ export function Board(props: BoardProps) {
       <div className="studio-board-scroll" ref={board}>
         <div className="studio-board-row">
           {design.screens.map((screen) => (
-            <BoardFrame key={screen.id} {...props} screen={screen} scale={scale} />
+            <BoardFrame
+              key={`${screen.id}/${props.visit}`}
+              {...props}
+              screen={screen}
+              scale={scale}
+            />
           ))}
         </div>
         {showExplorations && design.explorations?.length ? (
@@ -66,7 +77,12 @@ export function Board(props: BoardProps) {
             </Text>
             <div className="studio-board-row">
               {design.explorations.map((screen) => (
-                <BoardFrame key={screen.id} {...props} screen={screen} scale={scale} />
+                <BoardFrame
+                  key={`${screen.id}/${props.visit}`}
+                  {...props}
+                  screen={screen}
+                  scale={scale}
+                />
               ))}
             </div>
           </section>

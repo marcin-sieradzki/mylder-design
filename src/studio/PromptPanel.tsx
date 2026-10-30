@@ -2,12 +2,9 @@
 // design skill: a brief makes a new design, a change revises the open one. Everywhere else, and
 // on the public site, it says where designs come from instead.
 import { Alert, Button, Surface, Text, TextArea } from '@mylder/perron'
-import { useEffect, useRef, useState } from 'react'
-import { generate, generateStatus, stopGenerating } from '../generate/client.ts'
+import { useState } from 'react'
 import type { GenerateEvent } from '../generate/events.ts'
-
-/** How many of Claude's latest steps the log keeps on screen. */
-const LOG_LENGTH = 40
+import { startRun, stopRun, useRun } from '../generate/run.ts'
 
 function line(event: GenerateEvent) {
   switch (event.type) {
@@ -22,54 +19,6 @@ function line(event: GenerateEvent) {
   }
 }
 
-function useGenerator(designId?: string) {
-  const [available, setAvailable] = useState(false)
-  const [running, setRunning] = useState(false)
-  const [log, setLog] = useState<GenerateEvent[]>([])
-  const [outcome, setOutcome] = useState<GenerateEvent>()
-  const abort = useRef<AbortController>(undefined)
-
-  useEffect(() => {
-    let live = true
-    void generateStatus().then((status) => live && setAvailable(status.available))
-    return () => {
-      live = false
-    }
-  }, [])
-
-  const start = async (prompt: string) => {
-    setRunning(true)
-    setLog([])
-    setOutcome(undefined)
-    abort.current = new AbortController()
-    try {
-      await generate(
-        { prompt, designId },
-        (event) => {
-          if (event.type === 'done' || event.type === 'error') setOutcome(event)
-          else setLog((earlier) => [...earlier, event].slice(-LOG_LENGTH))
-        },
-        abort.current.signal,
-      )
-    } catch (error) {
-      if (!abort.current.signal.aborted)
-        setOutcome({
-          type: 'error',
-          message: error instanceof Error ? error.message : String(error),
-        })
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  const stop = () => {
-    abort.current?.abort()
-    void stopGenerating()
-  }
-
-  return { available, running, log, outcome, start, stop }
-}
-
 interface PromptPanelProps {
   /** The design to revise; left out, the panel makes a new design */
   designId?: string
@@ -79,8 +28,17 @@ interface PromptPanelProps {
 }
 
 function PromptPanel({ designId, label, placeholder, action }: PromptPanelProps) {
-  const generator = useGenerator(designId)
+  const run = useRun()
   const [prompt, setPrompt] = useState('')
+  // the run shows where it was started: on its design's page, or in the gallery for a new one
+  const mine = run.designId === designId
+  const generator = {
+    ...run,
+    log: mine ? run.log : [],
+    outcome: mine ? run.outcome : undefined,
+    start: (text: string) => startRun({ prompt: text, designId }),
+    stop: stopRun,
+  }
 
   if (!generator.available)
     return (
@@ -105,7 +63,9 @@ function PromptPanel({ designId, label, placeholder, action }: PromptPanelProps)
         {generator.running ? (
           <>
             <Text variant="body-sm" emphasis="secondary">
-              Claude is working. New screens appear on the board as they are written.
+              {mine
+                ? 'Claude is working. New screens appear on the board as they are written.'
+                : 'Claude is working on another design.'}
             </Text>
             <Button variant="outline" onClick={generator.stop}>
               Stop

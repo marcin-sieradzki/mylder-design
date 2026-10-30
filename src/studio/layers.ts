@@ -26,11 +26,16 @@ export function textOf(element: Element, max = 40): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
 
-/** How a draft prompt names an edit's element. */
+/** How an edit names its element for a person: by layer, and by text unless it changes it. */
+export function labelOf(element: Element, kind: Edit['kind']) {
+  const text = kind === 'text' ? '' : textOf(element)
+  return `Layer "${layerName(element)}"${text ? ` with the text "${text}"` : ''}`
+}
+
+/** How a draft prompt names an edit's element: as it was when the edit was made. */
 export function describeEdit(edit: Edit, documentOf: (screen: string) => Document | undefined) {
+  if (edit.label) return edit.label
   const root = documentOf(edit.screen)?.getElementById(SCREEN_ROOT_ID)
   const element = root ? elementAt(root, edit.node) : undefined
-  if (!element) return 'An element the screen no longer has'
-  const text = edit.kind === 'text' ? '' : textOf(element)
-  return `Layer "${layerName(element)}"${text ? ` with the text "${text}"` : ''}`
+  return element ? labelOf(element, edit.kind) : 'An element the screen no longer has'
 }

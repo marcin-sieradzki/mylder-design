@@ -2,11 +2,13 @@
 // its screens list and the prompt box. Every change a visitor makes goes into their draft.
 import { Segment, SegmentedControl, Switch, Tag, Text } from '@mylder/perron'
 import { useCallback, useRef, useState } from 'react'
-import type { Theme } from '../canvas/protocol.ts'
+import { SCREEN_ROOT_ID, type Theme } from '../canvas/protocol.ts'
+import { elementAt } from '../draft/paths.ts'
 import { useDraft } from '../draft/useDraft.ts'
 import type { Design } from '../designs/types.ts'
 import { Board, type Selection } from './Board.tsx'
 import { Inspector } from './Inspector.tsx'
+import { labelOf } from './layers.ts'
 import { ReviseDesign } from './PromptPanel.tsx'
 import { h1 } from '../kit/headings.tsx'
 import { StudioBar } from './StudioBar.tsx'
@@ -22,6 +24,9 @@ type BoardMode = 'interact' | 'edit'
 export function Editor({ design, theme, onThemeChange }: EditorProps) {
   const controls = useDraft(design)
   const [mode, setMode] = useState<BoardMode>('edit')
+  // a screen played with in Interact may have changed its tree; Edit starts each screen afresh,
+  // so the draft's paths find the elements they were made on
+  const [visit, setVisit] = useState(0)
   const [selection, setSelection] = useState<Selection>()
   const [showExplorations, setShowExplorations] = useState(true)
   const documents = useRef(new Map<string, Document>())
@@ -42,7 +47,10 @@ export function Editor({ design, theme, onThemeChange }: EditorProps) {
         (e) => e.kind === 'text' && e.screen === screen && e.node === node,
       )
       const was = earlier?.kind === 'text' ? earlier.was : before
-      addEdit({ kind: 'text', screen, node, value, was })
+      const root = documents.current.get(screen)?.getElementById(SCREEN_ROOT_ID)
+      const element = root ? elementAt(root, node) : undefined
+      const label = element ? labelOf(element, 'text') : undefined
+      addEdit({ kind: 'text', screen, node, value, was, label })
       setSelection({ screen, node })
     },
     [addEdit, draft.edits],
@@ -74,6 +82,7 @@ export function Editor({ design, theme, onThemeChange }: EditorProps) {
             value={mode}
             onChange={(_event, value) => {
               if (!value) return
+              if (value === 'edit') setVisit((v) => v + 1)
               setMode(value as BoardMode)
               setSelection(undefined)
             }}
@@ -123,6 +132,7 @@ export function Editor({ design, theme, onThemeChange }: EditorProps) {
           tweaks={tweaks}
           edits={draft.edits}
           showExplorations={showExplorations}
+          visit={visit}
           selection={selection}
           onSelect={setSelection}
           onTextEdit={onTextEdit}

@@ -3,7 +3,7 @@
 // does back as newline-delimited GenerateEvents. It exists only under `vite` (dev); the static
 // build has no server, so on the public site nobody can generate.
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import {
   eventsOf,
@@ -29,10 +29,15 @@ const ALLOWED_TOOLS = [
   'Bash(npm run *)',
   'Bash(npx prettier *)',
   'Bash(node scripts/*)',
+  'Bash(rm designs/*)',
+  'Bash(mv designs/*)',
   'mcp__perron__list_tokens',
   'mcp__perron__search_docs',
   'mcp__perron__get_reference',
 ]
+
+/** How long a stopped run gets to finish before it is killed outright. */
+const STOP_GRACE_MS = 5000
 
 async function bodyOf(request: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = []
@@ -40,46 +45,73 @@ async function bodyOf(request: IncomingMessage): Promise<string> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
+/**
+ * Whether a request comes from the studio itself. A page on any other site could otherwise
+ * post to localhost and start Claude: browsers send Origin with every cross-site POST, and only
+ * a JSON body (which needs a preflight this route never answers) is taken.
+ */
+export function fromStudio(request: IncomingMessage): boolean {
+  const origin = request.headers.origin
+  if (origin !== undefined && origin !== `http://${request.headers.host}`) return false
+  return (
+    request.method !== 'POST' ||
+    (request.headers['content-type'] ?? '').startsWith('application/json')
+  )
+}
+
 const claudeAvailable = () => spawnSync('claude', ['--version'], { stdio: 'ignore' }).status === 0
+
+function answer(response: ServerResponse, status: number, text = '') {
+  response.statusCode = status
+  response.end(text)
+}
 
 export function generatePlugin(root: string): Plugin {
   let run: ChildProcess | undefined
+  /** A POST is between its check and its spawn */
+  let starting = false
   let available: boolean | undefined
+
+  const stop = () => {
+    const child = run
+    if (!child) return
+    child.kill('SIGINT')
+    setTimeout(() => {
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
+    }, STOP_GRACE_MS).unref()
+  }
 
   return {
     name: 'mylder-design:generate',
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use(GENERATE_ROUTE, (request, response) => {
+        if (!fromStudio(request)) return answer(response, 403)
+        if (request.method === 'GET') {
+          available ??= claudeAvailable()
+          const status: GenerateStatus = { available, running: run !== undefined || starting }
+          response.setHeader('content-type', 'application/json')
+          return response.end(JSON.stringify(status))
+        }
+        if (request.method === 'DELETE') {
+          stop()
+          return answer(response, 204)
+        }
+        if (request.method !== 'POST') return answer(response, 405)
+        if (run || starting) return answer(response, 409, 'Claude is already working on a design.')
+        starting = true
+
         void (async () => {
-          if (request.method === 'GET') {
-            available ??= claudeAvailable()
-            const status: GenerateStatus = { available, running: run !== undefined }
-            response.setHeader('content-type', 'application/json')
-            response.end(JSON.stringify(status))
-            return
+          let body: GenerateRequest
+          try {
+            body = JSON.parse(await bodyOf(request)) as GenerateRequest
+          } catch {
+            starting = false
+            return answer(response, 400, 'The request is not JSON.')
           }
-          if (request.method === 'DELETE') {
-            run?.kill('SIGINT')
-            response.statusCode = 204
-            response.end()
-            return
-          }
-          if (request.method !== 'POST') {
-            response.statusCode = 405
-            response.end()
-            return
-          }
-          if (run) {
-            response.statusCode = 409
-            response.end('Claude is already working on a design.')
-            return
-          }
-          const body = JSON.parse(await bodyOf(request)) as GenerateRequest
-          if (!body.prompt?.trim()) {
-            response.statusCode = 400
-            response.end('A brief is needed.')
-            return
+          if (typeof body.prompt !== 'string' || !body.prompt.trim()) {
+            starting = false
+            return answer(response, 400, 'A brief is needed.')
           }
           response.setHeader('content-type', 'application/x-ndjson')
           const send = (event: GenerateEvent) => response.write(`${JSON.stringify(event)}\n`)
@@ -90,12 +122,11 @@ export function generatePlugin(root: string): Plugin {
           if (process.env.MYLDER_DESIGN_EFFORT)
             args.push('--effort', process.env.MYLDER_DESIGN_EFFORT)
           // the skill screenshots its screens through this same dev server
-          const env = {
-            ...process.env,
-            MYLDER_DESIGN_URL: server.resolvedUrls?.local[0]?.replace(/\/$/, ''),
-          }
+          const url = server.resolvedUrls?.local[0]?.replace(/\/$/, '')
+          const env = { ...process.env, MYLDER_DESIGN_URL: url }
           const child = spawn('claude', args, { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] })
           run = child
+          starting = false
 
           let buffered = ''
           child.stdout.setEncoding('utf8')
@@ -113,12 +144,12 @@ export function generatePlugin(root: string): Plugin {
             for (const event of eventsOf(buffered)) send(event)
             if (code !== 0)
               send({ type: 'error', message: errors.trim() || `claude exited ${code}` })
-            run = undefined
+            if (run === child) run = undefined
             response.end()
           })
           // the studio tab closed or stopped reading: stop Claude too
           response.on('close', () => {
-            if (!response.writableFinished) child.kill('SIGINT')
+            if (!response.writableFinished && run === child) stop()
           })
         })()
       })

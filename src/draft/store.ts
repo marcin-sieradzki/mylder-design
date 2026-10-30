@@ -22,8 +22,20 @@ export function loadDraft(designId: string, storage: Storage | undefined = globa
   try {
     const text = storage?.getItem(keyOf(designId))
     if (!text) return undefined
-    const draft = JSON.parse(text) as Draft
-    return Array.isArray(draft.edits) && typeof draft.revision === 'string' ? draft : undefined
+    const draft = JSON.parse(text) as Partial<Draft>
+    if (typeof draft.revision !== 'string' || !Array.isArray(draft.edits)) return undefined
+    const tweaks = Object.fromEntries(
+      Object.entries(draft.tweaks ?? {}).filter(([, value]) => typeof value === 'string'),
+    )
+    // keep only edits that still look like edits: a draft from an older studio may not
+    const edits = draft.edits.filter(
+      (edit: Partial<Edit>) =>
+        typeof edit?.screen === 'string' &&
+        typeof edit.node === 'string' &&
+        /^\d+(\.\d+)*$/.test(edit.node) &&
+        typeof edit.kind === 'string',
+    )
+    return { revision: draft.revision, edits, tweaks }
   } catch {
     return undefined
   }
