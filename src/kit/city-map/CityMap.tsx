@@ -37,10 +37,24 @@ export interface CityMapProps {
   motion?: boolean
   /** Fade the drawing behind panels: `none` (default), `soft` or `strong` */
   veil?: 'none' | 'soft' | 'strong'
+  /**
+   * The vehicles to draw in place of the map's own gliding ones, each where the screen puts it, for
+   * a screen that sets every vehicle's place and state itself, such as a replay
+   */
+  vehicles?: readonly CityMapVehicle[]
   /** Extra drawing in the map's own units (1440 × 1240), above the lines and under the vehicles */
   children?: ReactNode
   className?: string
   style?: CSSProperties
+}
+
+/** A vehicle a screen places itself, as CityMap's `vehicles` takes it. */
+export interface CityMapVehicle {
+  /** The route it runs on, one of CITY_MAP_ROUTES' ids */
+  route: string
+  state: DataState
+  /** Where it is, as a share of its route's length from the start */
+  at: number
 }
 
 const routeById = new Map(ROUTES.map((r) => [r.id, r]))
@@ -94,6 +108,7 @@ export function CityMap({
   offset = { x: 0, y: 0 },
   motion = true,
   veil = 'none',
+  vehicles,
   children,
   className,
   style,
@@ -177,72 +192,105 @@ export function CityMap({
 
         {children}
 
-        <g className="city-map-moving">
-          {moving.map(({ v, route, keys, r }, i) => {
-            const every = v.duration / REPORTS_PER_RUN
-            const share = svgList([pulse / (every * 1000)])
-            return (
-              <g key={i} style={lineColor(route)}>
-                <animateMotion
-                  dur={`${v.duration}s`}
-                  begin={`${v.offset}s`}
-                  repeatCount="indefinite"
-                  calcMode="linear"
-                  keyTimes={svgList(keys.times)}
-                  keyPoints={svgList(keys.points)}
-                >
-                  <mpath href={`#${pathId(route)}`} />
-                </animateMotion>
-                {v.pulses ? (
-                  <circle className="city-map-pulse" r={r} strokeWidth={PULSE_STROKE}>
-                    <animate
-                      attributeName="r"
-                      values={`${r};${r * PULSE_GROWTH};${r * PULSE_GROWTH}`}
-                      keyTimes={`0;${share};1`}
-                      dur={`${every}s`}
-                      begin={`${v.offset}s`}
-                      repeatCount="indefinite"
-                    />
-                    <animate
-                      attributeName="opacity"
-                      values="1;0;0"
-                      keyTimes={`0;${share};1`}
-                      dur={`${every}s`}
-                      begin={`${v.offset}s`}
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                ) : null}
-                <Dot r={r} state={v.state} />
-              </g>
-            )
-          })}
-        </g>
-
-        <g className="city-map-still">
-          {moving.map(({ v, route, keys, r }, i) => {
-            const reports = reportKeys(keys, REPORTS_PER_RUN)
-            const at = pointAt(route.d, reports.points[0] ?? 0)
-            return (
-              <g key={i} style={lineColor(route)} transform={`translate(${at.x} ${at.y})`}>
-                <Dot r={r} state={v.state} />
-              </g>
-            )
-          })}
-        </g>
-
-        {STILL.map((v, i) => {
-          const route = routeOf(v.route)
-          const at = pointAt(route.d, v.at)
-          return (
-            <g key={i} style={lineColor(route)} transform={`translate(${at.x} ${at.y})`}>
-              <Dot r={size(route.mode, v.state)} state={v.state} />
-            </g>
-          )
-        })}
+        {vehicles ? (
+          <g className="city-map-placed">
+            {vehicles.map((v, i) => {
+              const route = routeOf(v.route)
+              const at = pointAt(route.d, v.at)
+              return (
+                <g key={i} style={lineColor(route)} transform={`translate(${at.x} ${at.y})`}>
+                  <Dot r={size(route.mode, v.state)} state={v.state} />
+                </g>
+              )
+            })}
+          </g>
+        ) : (
+          <OwnVehicles moving={moving} pulse={pulse} pathId={pathId} />
+        )}
       </svg>
       <div className="city-map-veil" />
     </div>
+  )
+}
+
+type Placed = { v: MovingVehicle; route: Route; keys: Keys; r: number }
+
+/** The map's own vehicles: gliding along their routes, or each at its last report. */
+function OwnVehicles({
+  moving,
+  pulse,
+  pathId,
+}: {
+  moving: Placed[]
+  pulse: number
+  pathId: (route: Route) => string
+}) {
+  return (
+    <>
+      <g className="city-map-moving">
+        {moving.map(({ v, route, keys, r }, i) => {
+          const every = v.duration / REPORTS_PER_RUN
+          const share = svgList([pulse / (every * 1000)])
+          return (
+            <g key={i} style={lineColor(route)}>
+              <animateMotion
+                dur={`${v.duration}s`}
+                begin={`${v.offset}s`}
+                repeatCount="indefinite"
+                calcMode="linear"
+                keyTimes={svgList(keys.times)}
+                keyPoints={svgList(keys.points)}
+              >
+                <mpath href={`#${pathId(route)}`} />
+              </animateMotion>
+              {v.pulses ? (
+                <circle className="city-map-pulse" r={r} strokeWidth={PULSE_STROKE}>
+                  <animate
+                    attributeName="r"
+                    values={`${r};${r * PULSE_GROWTH};${r * PULSE_GROWTH}`}
+                    keyTimes={`0;${share};1`}
+                    dur={`${every}s`}
+                    begin={`${v.offset}s`}
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="1;0;0"
+                    keyTimes={`0;${share};1`}
+                    dur={`${every}s`}
+                    begin={`${v.offset}s`}
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              ) : null}
+              <Dot r={r} state={v.state} />
+            </g>
+          )
+        })}
+      </g>
+
+      <g className="city-map-still">
+        {moving.map(({ v, route, keys, r }, i) => {
+          const reports = reportKeys(keys, REPORTS_PER_RUN)
+          const at = pointAt(route.d, reports.points[0] ?? 0)
+          return (
+            <g key={i} style={lineColor(route)} transform={`translate(${at.x} ${at.y})`}>
+              <Dot r={r} state={v.state} />
+            </g>
+          )
+        })}
+      </g>
+
+      {STILL.map((v, i) => {
+        const route = routeOf(v.route)
+        const at = pointAt(route.d, v.at)
+        return (
+          <g key={i} style={lineColor(route)} transform={`translate(${at.x} ${at.y})`}>
+            <Dot r={size(route.mode, v.state)} state={v.state} />
+          </g>
+        )
+      })}
+    </>
   )
 }
 

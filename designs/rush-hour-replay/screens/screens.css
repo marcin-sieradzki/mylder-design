@@ -1,0 +1,458 @@
+/* Rush hour replay. Unlike the live map, which fills the window with glass floating over it, the
+   replay is a page: its own header, the map framed like a picture, the player under the map, and
+   City pulse beside it (desktop) or below it (phone), all on the page's own surface. */
+
+.rush-hour-replay-screen {
+  /* the slider's track starts and ends half a thumb in from its box, so whatever lines up with
+     the track (the profile, the hours) takes the same inset, worked out as Slider's CSS does */
+  --rush-hour-replay-inset: calc(
+    (
+        var(--perron-size-target-min) - 2 * var(--perron-space-050) - 2 *
+          var(--perron-border-width-025)
+      ) /
+      2
+  );
+
+  position: relative;
+  box-sizing: border-box;
+  block-size: 100%;
+  overflow: hidden;
+  background: var(--perron-color-surface-default);
+  color: var(--perron-color-text-primary);
+}
+
+.rush-hour-replay-screen p,
+.rush-hour-replay-screen h1,
+.rush-hour-replay-screen h2 {
+  margin: 0;
+}
+
+/* ---- The header ---- */
+
+.rush-hour-replay-head {
+  display: flex;
+  align-items: center;
+  gap: var(--perron-space-300);
+  min-inline-size: 0;
+}
+
+.rush-hour-replay-brand {
+  flex: none;
+  align-self: flex-start;
+}
+
+.rush-hour-replay-title {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--perron-space-100);
+}
+
+/* ---- The framed map ---- */
+
+.rush-hour-replay-map {
+  position: relative;
+  min-block-size: 0;
+  overflow: hidden;
+  background: var(--perron-color-map-water);
+}
+
+.rush-hour-replay-map[data-framed='true'] {
+  border: var(--perron-border-width-025) solid var(--perron-color-border-strong);
+  border-radius: var(--perron-radius-xl);
+}
+
+.rush-hour-replay-stamp {
+  position: absolute;
+  inset-block-start: var(--perron-size-panel-gap);
+  inset-inline-start: var(--perron-size-panel-gap);
+  display: flex;
+  align-items: center;
+  gap: var(--perron-space-200);
+  padding-block: var(--perron-space-150);
+  padding-inline: var(--perron-space-300);
+}
+
+/* ---- The player: controls, timeline and jumps ---- */
+
+.rush-hour-replay-player {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-300);
+  min-inline-size: 0;
+}
+
+.rush-hour-replay-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--perron-space-300);
+}
+
+.rush-hour-replay-clock {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.rush-hour-replay-speed {
+  flex: none;
+}
+
+.rush-hour-replay-timeline {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+/* The profile: the flags on a row of their own, the drawing under them */
+.rush-hour-replay-profile {
+  position: relative;
+  block-size: calc(var(--perron-space-800) + var(--perron-space-500));
+  margin-inline: var(--rush-hour-replay-inset);
+}
+
+.rush-hour-replay-profile svg {
+  position: absolute;
+  inset-block: var(--perron-space-500) 0;
+  inset-inline: 0;
+  inline-size: 100%;
+  block-size: calc(100% - var(--perron-space-500));
+  overflow: visible;
+}
+
+.rush-hour-replay-area {
+  fill: var(--perron-color-chart-series);
+  fill-opacity: var(--perron-opacity-series-fill);
+}
+
+.rush-hour-replay-played {
+  clip-path: inset(0 calc(100% - var(--rush-hour-replay-played)) 0 0);
+}
+
+.rush-hour-replay-played path {
+  fill: var(--perron-color-chart-series);
+  fill-opacity: calc(3 * var(--perron-opacity-series-fill));
+}
+
+.rush-hour-replay-stretch {
+  fill-opacity: var(--perron-opacity-series-fill);
+}
+
+.rush-hour-replay-stretch[data-moment='signal-fault'] {
+  fill: var(--perron-color-transit-severity-delay);
+}
+
+.rush-hour-replay-stretch[data-moment='movia-gap'] {
+  fill: var(--perron-color-transit-severity-data);
+}
+
+.rush-hour-replay-busiest {
+  stroke: var(--perron-color-text-primary);
+  stroke-width: var(--perron-border-width-050);
+}
+
+/* A flag over each marked moment, its icon in the moment's colour */
+.rush-hour-replay-flag {
+  position: absolute;
+  inset-block-start: 0;
+  translate: -50% 0;
+  display: flex;
+  --perron-icon-size: var(--perron-icon-size-325);
+}
+
+.rush-hour-replay-flag[data-moment='signal-fault'] {
+  color: var(--perron-color-transit-severity-delay);
+}
+
+.rush-hour-replay-flag[data-moment='movia-gap'] {
+  color: var(--perron-color-transit-severity-data);
+  /* the gap starts while the fault is still on: its flag stands a little lower */
+}
+
+.rush-hour-replay-flag[data-moment='busiest'] {
+  color: var(--perron-color-text-primary);
+}
+
+/* The slider runs the whole width, its figure left out: the clock says the time */
+.rush-hour-replay-timeline .rush-hour-replay-slider {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rush-hour-replay-timeline .rush-hour-replay-slider-figure {
+  display: none;
+}
+
+.rush-hour-replay-hours {
+  position: relative;
+  block-size: var(--perron-space-500);
+  margin-inline: var(--rush-hour-replay-inset);
+  font: var(--perron-typography-data-sm);
+  letter-spacing: var(--perron-typography-data-sm-tracking);
+  color: var(--perron-color-text-tertiary);
+}
+
+.rush-hour-replay-hours span {
+  position: absolute;
+  inset-block-start: 0;
+  translate: -50% 0;
+}
+
+.rush-hour-replay-hours span:first-child {
+  translate: 0 0;
+}
+
+.rush-hour-replay-hours span:last-child {
+  translate: -100% 0;
+}
+
+.rush-hour-replay-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--perron-space-200);
+}
+
+/* ---- City pulse at the replay's minute ---- */
+
+.rush-hour-replay-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-400);
+  min-block-size: 0;
+}
+
+.rush-hour-replay-pulse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-500);
+}
+
+.rush-hour-replay-figures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-400);
+}
+
+.rush-hour-replay-figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-100);
+}
+
+.rush-hour-replay-events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-200);
+}
+
+/* ---- Desktop: the header across, the map with the player under it, City pulse beside ---- */
+
+.rush-hour-replay-screen[data-device='desktop'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--perron-size-sheet-width);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head'
+    'map panel'
+    'player panel';
+  gap: var(--perron-size-panel-gap);
+  padding: var(--perron-size-panel-gap);
+}
+
+[data-device='desktop'] .rush-hour-replay-head {
+  grid-area: head;
+  padding-inline: var(--perron-space-200);
+}
+
+[data-device='desktop'] .rush-hour-replay-title {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--perron-space-300);
+}
+
+[data-device='desktop'] .rush-hour-replay-title > :first-child {
+  align-self: center;
+}
+
+[data-device='desktop'] .rush-hour-replay-map {
+  grid-area: map;
+}
+
+/* The timeline as wide as the map, the controls and the jumps on a row under it */
+[data-device='desktop'] .rush-hour-replay-player {
+  grid-area: player;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'jumps jumps'
+    'timeline timeline'
+    'controls legend';
+  align-items: center;
+  column-gap: var(--perron-space-600);
+  row-gap: var(--perron-space-200);
+  padding-inline: var(--perron-space-200);
+}
+
+[data-device='desktop'] .rush-hour-replay-legend {
+  grid-area: legend;
+  justify-self: end;
+}
+
+[data-device='desktop'] .rush-hour-replay-timeline {
+  grid-area: timeline;
+}
+
+[data-device='desktop'] .rush-hour-replay-controls {
+  grid-area: controls;
+  gap: var(--perron-space-400);
+}
+
+[data-device='desktop'] .rush-hour-replay-jumps {
+  grid-area: jumps;
+}
+
+[data-device='desktop'] .rush-hour-replay-panel {
+  grid-area: panel;
+  overflow-y: auto;
+  padding: var(--perron-space-400);
+  border-radius: var(--perron-radius-xl);
+}
+
+/* The panel-side tweak: City pulse on the left, the map and the player on the right */
+html[data-tweak-panel-side='left'] .rush-hour-replay-screen[data-device='desktop'] {
+  grid-template-columns: var(--perron-size-sheet-width) minmax(0, 1fr);
+  grid-template-areas:
+    'head head'
+    'panel map'
+    'panel player';
+}
+
+/* ---- Phone: the header, the map, the player, and City pulse scrolling under them ---- */
+
+.rush-hour-replay-screen[data-device='phone'] {
+  --rush-hour-replay-map-height: 300px;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto var(--rush-hour-replay-map-height) auto minmax(0, 1fr);
+}
+
+/* The map-share tweak: how much of the phone the map takes */
+html[data-tweak-map-share='less'] .rush-hour-replay-screen[data-device='phone'] {
+  --rush-hour-replay-map-height: 220px;
+}
+
+html[data-tweak-map-share='more'] .rush-hour-replay-screen[data-device='phone'] {
+  --rush-hour-replay-map-height: 400px;
+}
+
+[data-device='phone'] .rush-hour-replay-head {
+  padding: var(--perron-space-300) var(--perron-space-400);
+}
+
+[data-device='phone'] .rush-hour-replay-map {
+  margin-inline: var(--perron-space-300);
+}
+
+[data-device='phone'] .rush-hour-replay-player {
+  padding: var(--perron-space-300) var(--perron-space-400) var(--perron-space-200);
+}
+
+/* On a phone the jumps run in one row that scrolls sideways, to the screen's edges */
+[data-device='phone'] .rush-hour-replay-jumps {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--perron-space-400));
+  padding-inline: var(--perron-space-400);
+  scrollbar-width: none;
+}
+
+[data-device='phone'] .rush-hour-replay-jumps > * {
+  flex: none;
+}
+
+[data-device='phone'] .rush-hour-replay-panel {
+  overflow-y: auto;
+  padding: var(--perron-space-300) var(--perron-space-400) var(--perron-space-500);
+  border-block-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+}
+
+/* Two figures side by side on a phone, the third under them */
+[data-device='phone'] .rush-hour-replay-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--perron-space-400) var(--perron-space-300);
+}
+
+/* ---- The profile tweak: the timeline as a bare track, the flags kept ---- */
+
+html[data-tweak-profile='hidden'] .rush-hour-replay-profile {
+  block-size: var(--perron-space-500);
+}
+
+html[data-tweak-profile='hidden'] .rush-hour-replay-profile svg {
+  display: none;
+}
+
+/* ---- The density tweak: tighter columns in City pulse and the player ---- */
+
+html[data-tweak-density='compact'] .rush-hour-replay-panel,
+html[data-tweak-density='compact'] .rush-hour-replay-pulse {
+  gap: var(--perron-space-300);
+}
+
+html[data-tweak-density='compact'] .rush-hour-replay-figures {
+  gap: var(--perron-space-200);
+}
+
+html[data-tweak-density='compact'] .rush-hour-replay-figure {
+  gap: var(--perron-space-050);
+}
+
+html[data-tweak-density='compact'] .rush-hour-replay-player {
+  gap: var(--perron-space-200);
+}
+
+/* ---- Direction B: over the map ---- */
+
+[data-direction='b'] {
+  display: block;
+}
+
+[data-direction='b'] .rush-hour-replay-float-head {
+  position: absolute;
+  inset-block-start: var(--perron-size-panel-gap);
+  inset-inline: var(--perron-size-panel-gap);
+  display: flex;
+  align-items: center;
+  gap: var(--perron-space-300);
+  padding: var(--perron-space-300) var(--perron-space-400);
+}
+
+[data-direction='b'] .rush-hour-replay-dock {
+  position: absolute;
+  inset-block-end: var(--perron-size-panel-gap);
+  inset-inline: var(--perron-size-panel-gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-300);
+}
+
+[data-direction='b'] .rush-hour-replay-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--perron-space-300);
+}
+
+/* ---- Direction C: the morning first ---- */
+
+.rush-hour-replay-screen[data-direction='c'] {
+  grid-template-rows: auto auto 180px minmax(0, 1fr);
+}
+
+[data-direction='c'] .rush-hour-replay-profile {
+  block-size: calc(3 * var(--perron-space-800));
+}
