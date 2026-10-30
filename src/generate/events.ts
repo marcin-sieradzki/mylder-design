@@ -30,7 +30,16 @@ const firstLine = (text: string, max = 120) => {
 }
 
 function toolDetail(input: Record<string, unknown>): string {
-  for (const key of ['file_path', 'command', 'pattern', 'path', 'skill', 'description']) {
+  for (const key of [
+    'file_path',
+    'command',
+    'pattern',
+    'query',
+    'component',
+    'path',
+    'skill',
+    'description',
+  ]) {
     const value = input[key]
     if (typeof value === 'string') return firstLine(value)
   }
