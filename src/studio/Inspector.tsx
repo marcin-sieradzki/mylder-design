@@ -113,14 +113,16 @@ export function Inspector({
             Start over
           </Button>
         </div>
-        <Button
-          variant="outline"
-          size="small"
-          onClick={() => void copyPrompt()}
-          disabled={count === 0 && Object.keys(draft.tweaks).length === 0}
-        >
-          Copy as a prompt for Claude
-        </Button>
+        <div className="studio-inspector-row">
+          <Button
+            variant="outline"
+            size="small"
+            onClick={() => void copyPrompt()}
+            disabled={count === 0 && Object.keys(draft.tweaks).length === 0}
+          >
+            Copy as a prompt for Claude
+          </Button>
+        </div>
       </Section>
 
       {editing ? (
