@@ -1,0 +1,9 @@
+node_modules
+dist
+package-lock.json
+test-results
+playwright-report
+docs/media
+.claude/skills/vercel-react-best-practices
+.claude/skills/writing-for-agents
+.shots

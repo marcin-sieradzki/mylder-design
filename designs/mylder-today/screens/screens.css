@@ -1,0 +1,375 @@
+/* Mylder today: the map fills the frame and everything else floats over it, as Mylder's
+   MapScreen.module.css, MapFoot.module.css, CityPulse.module.css and the panels' CSS place it. On
+   a desktop the panels are absolute, size.panel-gap from the edges and from each other; on a phone
+   the screen is a column of the top bar, the map's room and the bottom sheet. */
+
+.mylder-today-screen {
+  position: relative;
+  block-size: 100%;
+  overflow: hidden;
+  /* water is the page behind the map, so its edges never flash white */
+  background: var(--perron-color-map-water);
+}
+
+.mylder-today-screen p {
+  margin: 0;
+}
+
+/* The map's veil, off unless the veil tweak lays the page's surface faintly over the map */
+.mylder-today-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--perron-color-surface-default);
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-tweak-veil='soft'] .mylder-today-veil {
+  opacity: var(--perron-opacity-map-dim-station);
+}
+
+/* ---- The top bar, over every panel ---- */
+
+.mylder-today-top {
+  position: absolute;
+  inset-block-start: var(--perron-space-300);
+  inset-inline: var(--perron-space-300);
+  z-index: var(--perron-z-index-top-bar);
+}
+
+/* ---- The city sheet ---- */
+
+.mylder-today-sheet {
+  z-index: var(--perron-z-index-sheet);
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-300);
+  overflow: hidden;
+}
+
+.mylder-today-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--perron-space-300);
+}
+
+.mylder-today-sheet-head h2 {
+  margin: 0;
+}
+
+.mylder-today-tabs {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+/* The open tab scrolls to the panel's edge, its scrollbar in the panel's padding */
+.mylder-today-tab-panel {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  margin-inline-end: calc(-1 * var(--perron-space-400));
+  margin-block-end: calc(-1 * var(--perron-space-400));
+  padding-inline-end: var(--perron-space-400);
+  padding-block-end: var(--perron-space-400);
+}
+
+/* City pulse: the key figures, the states now, the meters, the day and the key, one column */
+.mylder-today-pulse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-500);
+}
+
+.mylder-today-figures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-400);
+}
+
+.mylder-today-figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-100);
+}
+
+.mylder-today-meters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-300);
+}
+
+.mylder-today-meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-050);
+}
+
+.mylder-today-profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-100);
+}
+
+/* The chart's caption says on a line of its own that it is the plan */
+.mylder-today-planned {
+  display: block;
+}
+
+/* The Vehicles list and Disruptions */
+.mylder-today-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-300);
+}
+
+/* ---- The detail panel ---- */
+
+.mylder-today-detail {
+  z-index: var(--perron-z-index-detail);
+  display: flex;
+  flex-direction: column;
+  gap: var(--perron-space-300);
+  overflow: hidden;
+}
+
+.mylder-today-detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--perron-space-300);
+}
+
+.mylder-today-detail-head > :first-child {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* The header's controls in a row of their own under the title, as DetailPanel sets them */
+.mylder-today-detail .mylder-today-actions {
+  grid-column: 1 / -1;
+  grid-row: 5;
+  flex-wrap: wrap;
+  row-gap: var(--perron-space-200);
+  margin-block-start: var(--perron-space-300);
+  margin-inline-start: 0;
+}
+
+.mylder-today-detail-body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  row-gap: var(--perron-space-300);
+  overflow-y: auto;
+  margin-inline-end: calc(-1 * var(--perron-space-400));
+  margin-block-end: calc(-1 * var(--perron-space-400));
+  padding-inline-end: var(--perron-space-400);
+  padding-block-end: var(--perron-space-400);
+}
+
+/* The state's dot and word, with the sentence it means beside them */
+.mylder-today-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--perron-space-200);
+  row-gap: var(--perron-space-050);
+}
+
+/* A stop's lines as badges under its name */
+.mylder-today-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--perron-space-100);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mylder-today-departures {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mylder-today-departure + .mylder-today-departure {
+  border-block-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+}
+
+/* Under an interval row, at its end, in the row's time type */
+.mylder-today-interval-note {
+  padding-block-end: var(--perron-space-200);
+  font: var(--perron-typography-data-sm);
+  letter-spacing: var(--perron-typography-data-sm-tracking);
+  color: var(--perron-color-text-secondary);
+  text-align: end;
+}
+
+/* ---- The map's foot: the legend, the controls and the scale, and the credit ---- */
+
+.mylder-today-foot {
+  z-index: var(--perron-z-index-map-controls);
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    'legend tools'
+    'legend credit';
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--perron-size-panel-gap);
+  pointer-events: none;
+}
+
+.mylder-today-legend,
+.mylder-today-tools,
+.mylder-today-credit {
+  pointer-events: auto;
+}
+
+.mylder-today-legend {
+  grid-area: legend;
+  justify-self: start;
+  max-inline-size: calc(10 * var(--perron-space-600));
+}
+
+.mylder-today-tools {
+  grid-area: tools;
+  justify-self: end;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--perron-size-panel-gap);
+}
+
+.mylder-today-credit {
+  grid-area: credit;
+  justify-self: end;
+  text-align: end;
+}
+
+/* ---- Desktop: the sheet on the left, the detail panel on the right, under the bar ---- */
+
+[data-device='desktop'] .mylder-today-sheet,
+[data-device='desktop'] .mylder-today-detail {
+  position: absolute;
+  inset-block-start: calc(
+    var(--perron-space-300) + var(--perron-size-top-bar) + var(--perron-size-panel-gap)
+  );
+  inset-block-end: var(--perron-size-panel-gap);
+}
+
+[data-device='desktop'] .mylder-today-sheet {
+  inset-inline-start: var(--perron-size-panel-gap);
+  inline-size: var(--perron-size-sheet-width);
+}
+
+[data-device='desktop'] .mylder-today-detail {
+  inset-inline-end: var(--perron-size-panel-gap);
+  inline-size: var(--perron-size-detail-width);
+}
+
+[data-device='desktop'] .mylder-today-foot {
+  position: absolute;
+  inset-block-end: var(--perron-size-panel-gap);
+  inset-inline-start: calc(var(--perron-size-sheet-width) + 2 * var(--perron-size-panel-gap));
+  inset-inline-end: var(--perron-size-panel-gap);
+}
+
+/* Beside an open panel too, the room is narrow, so the credit takes a row of its own */
+[data-device='desktop'][data-panel='open'] .mylder-today-foot {
+  inset-inline-end: calc(var(--perron-size-detail-width) + 2 * var(--perron-size-panel-gap));
+  grid-template-areas:
+    'legend tools'
+    'credit credit';
+}
+
+[data-device='desktop'][data-panel='open'] .mylder-today-credit {
+  justify-self: stretch;
+  text-align: start;
+}
+
+/* The sheet-side tweak: the sheet on the right, and the detail panel and the foot change sides */
+html[data-tweak-sheet-side='right'] [data-device='desktop'] .mylder-today-sheet {
+  inset-inline-start: auto;
+  inset-inline-end: var(--perron-size-panel-gap);
+}
+
+html[data-tweak-sheet-side='right'] [data-device='desktop'] .mylder-today-detail {
+  inset-inline-start: var(--perron-size-panel-gap);
+  inset-inline-end: auto;
+}
+
+html[data-tweak-sheet-side='right'] [data-device='desktop'] .mylder-today-foot {
+  inset-inline-start: var(--perron-size-panel-gap);
+  inset-inline-end: calc(var(--perron-size-sheet-width) + 2 * var(--perron-size-panel-gap));
+}
+
+html[data-tweak-sheet-side='right'] [data-device='desktop'][data-panel='open'] .mylder-today-foot {
+  inset-inline-start: calc(var(--perron-size-detail-width) + 2 * var(--perron-size-panel-gap));
+}
+
+/* ---- Phone: the bar, the map's room with the foot at its bottom, and the bottom sheet ---- */
+
+[data-device='phone'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(var(--perron-space-800), 1fr) minmax(0, auto);
+}
+
+[data-device='phone'] .mylder-today-top {
+  position: relative;
+  inset: auto;
+  grid-row: 1;
+  margin: var(--perron-space-300);
+  margin-block-end: 0;
+}
+
+[data-device='phone'] .mylder-today-foot {
+  position: relative;
+  grid-row: 2;
+  align-self: end;
+  margin: var(--perron-size-panel-gap);
+  grid-template-areas:
+    'legend tools'
+    'credit credit';
+}
+
+[data-device='phone'] .mylder-today-credit {
+  justify-self: stretch;
+  text-align: start;
+}
+
+/* A bottom sheet is flush with the frame's foot and sides, rounded at the top only */
+.mylder-today-screen[data-device='phone'] .mylder-today-sheet,
+.mylder-today-screen[data-device='phone'] .mylder-today-detail {
+  position: relative;
+  grid-row: 3;
+  border-block-end-width: 0;
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* The city sheet at its peek: the title, the tabs and the top of City pulse */
+.mylder-today-screen[data-device='phone'] .mylder-today-sheet {
+  block-size: var(--perron-size-sheet-peek);
+}
+
+/* ---- The density tweak: tighter columns in the sheet and the panels ---- */
+
+html[data-tweak-density='compact'] .mylder-today-pulse {
+  gap: var(--perron-space-300);
+}
+
+html[data-tweak-density='compact'] .mylder-today-figures {
+  gap: var(--perron-space-200);
+}
+
+html[data-tweak-density='compact'] .mylder-today-figure,
+html[data-tweak-density='compact'] .mylder-today-meters {
+  gap: var(--perron-space-050);
+}
+
+html[data-tweak-density='compact'] .mylder-today-detail-body,
+html[data-tweak-density='compact'] .mylder-today-list {
+  row-gap: var(--perron-space-200);
+}

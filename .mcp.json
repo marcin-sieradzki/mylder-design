@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "perron": { "command": "npx", "args": ["-y", "@mylder/perron-mcp"] }
+  }
+}
