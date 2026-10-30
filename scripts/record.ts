@@ -6,7 +6,7 @@
 //
 // Writes docs/media/studio.mp4 and docs/media/studio.gif.
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { chromium, type Page } from 'playwright'
@@ -54,7 +54,10 @@ await page
   .first()
   .locator('html[data-ready="true"]')
   .waitFor({ state: 'attached' })
-await pause(page, 2500)
+await pause(page, 1500)
+// one step closer, so the desktop screen reads in the video
+await page.getByRole('button', { name: 'Zoom in' }).click()
+await pause(page, 1500)
 
 // interact: the screen works
 await page
@@ -69,6 +72,13 @@ if (await play.count()) {
   await point(page, box.x + box.width / 2, box.y + box.height / 2)
   await play.click()
   await pause(page, 3500)
+}
+const jump = screen.locator('[data-layer="Jump to"] button').first()
+if (await jump.count()) {
+  const box = (await jump.boundingBox())!
+  await point(page, box.x + box.width / 2, box.y + box.height / 2)
+  await jump.click()
+  await pause(page, 2500)
 }
 
 // edit: type over a heading, then give a panel another Perron surface
@@ -122,11 +132,10 @@ for (let i = 0; i < 3; i++) {
 await pause(page, 1500)
 
 await context.close()
+const source = await page.video()!.path()
 await browser.close()
 
-const [video] = readdirSync(videos)
 mkdirSync('docs/media', { recursive: true })
-const source = join(videos, video!)
 execFileSync('ffmpeg', [
   '-y',
   '-loglevel',

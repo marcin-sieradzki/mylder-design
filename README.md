@@ -4,7 +4,14 @@ A design studio for [Mylder](https://github.com/marcin-sieradzki/mylder), the li
 
 **[Open the studio](https://marcin-sieradzki.github.io/mylder-design/)**
 
-<!-- video -->
+![A visitor opens Rush hour replay, plays the morning, jumps to a disruption, types over the title, gives the header a Perron surface, turns a tweak, switches to light and undoes it all](docs/media/studio.gif)
+
+[The same walk-through as a video](docs/media/studio.mp4). It was recorded with `node scripts/record.ts rush-hour-replay` against the static build.
+
+## The designs
+
+- **[Rush hour replay](designs/rush-hour-replay/)**: replay this morning's rush hour, 06:00 to 10:00, as Mylder recorded it, with City pulse following the clock and the busiest minute and the disruptions a press away. Generated from the studio's own prompt box with the `design` skill: three directions, one kept, three screens, four tweaks.
+- **[Mylder today](designs/mylder-today/)**: Mylder's map screen as it ships today, the reference every new design starts from.
 
 ## What you can do
 
