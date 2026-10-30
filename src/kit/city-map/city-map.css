@@ -1,0 +1,145 @@
+/* CityMap: the drawing at its own size, its middle at the frame's middle, shifted and zoomed by
+   the frame's custom properties, in Perron's map and transit tokens. */
+
+.city-map {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--perron-color-map-land);
+}
+
+.city-map-drawing {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  translate: calc(-50% + var(--city-map-x, 0px)) calc(-50% + var(--city-map-y, 0px));
+  scale: var(--city-map-zoom, 1);
+  transform-origin: calc(50% - var(--city-map-x, 0px)) calc(50% - var(--city-map-y, 0px));
+}
+
+.city-map-land {
+  fill: var(--perron-color-map-land);
+}
+
+.city-map-water {
+  fill: var(--perron-color-map-water);
+}
+
+.city-map-harbour {
+  fill: none;
+  stroke: var(--perron-color-map-water);
+  stroke-linecap: round;
+}
+
+.city-map-parks {
+  fill: var(--perron-color-map-park);
+}
+
+.city-map-streets {
+  fill: none;
+  stroke: var(--perron-color-map-street);
+  stroke-linecap: round;
+}
+
+.city-map-lines {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.city-map-line {
+  stroke: var(--map-line);
+  opacity: var(--perron-opacity-map-line);
+}
+
+.city-map-line-metro {
+  stroke-width: var(--perron-map-line-width-metro);
+}
+
+.city-map-line-stog {
+  stroke-width: var(--perron-map-line-width-stog);
+}
+
+.city-map-line-regional {
+  stroke-width: var(--perron-map-line-width-regional);
+  opacity: var(--perron-opacity-map-line-regional);
+}
+
+.city-map-stations {
+  fill: var(--perron-color-surface-raised);
+  stroke: var(--perron-color-text-primary);
+  stroke-width: var(--perron-border-width-050);
+}
+
+/* Vehicle dots, one shape per data state */
+.city-map-dot-live {
+  fill: var(--map-line);
+  stroke: var(--perron-color-data-state-halo);
+  stroke-width: var(--perron-vehicle-dot-halo);
+}
+
+.city-map-dot-ageing {
+  fill: var(--map-line);
+  fill-opacity: var(--perron-vehicle-dot-ageing-fill-opacity);
+  stroke: var(--map-line);
+  stroke-width: var(--perron-vehicle-dot-ageing-stroke-width);
+}
+
+.city-map-dot-estimated {
+  fill: none;
+  stroke: var(--map-line);
+  stroke-width: var(--perron-vehicle-dot-estimated-stroke-width);
+}
+
+.city-map-dot-timetable {
+  fill: none;
+  stroke: var(--map-line);
+  stroke-width: var(--perron-vehicle-dot-timetable-stroke-width);
+  stroke-dasharray: var(--perron-vehicle-dot-timetable-dash);
+}
+
+.city-map-dot-no-signal {
+  fill: var(--perron-color-data-state-no-signal);
+  stroke: var(--perron-color-data-state-halo);
+  stroke-width: var(--perron-vehicle-dot-halo);
+}
+
+.city-map-pulse {
+  fill: none;
+  stroke: var(--map-line);
+}
+
+/* Motion: gliding vehicles, or each at its last report */
+.city-map-still,
+.city-map[data-motion='off'] .city-map-moving {
+  display: none;
+}
+
+.city-map[data-motion='off'] .city-map-still {
+  display: inline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-map-moving {
+    display: none;
+  }
+
+  .city-map-still {
+    display: inline;
+  }
+}
+
+/* The veil fades the drawing towards the page's surface so panels over it read */
+.city-map-veil {
+  position: absolute;
+  inset: 0;
+}
+
+.city-map[data-veil='soft'] .city-map-veil {
+  background: color-mix(in srgb, var(--perron-color-surface-default) 30%, transparent);
+}
+
+.city-map[data-veil='strong'] .city-map-veil {
+  background: color-mix(in srgb, var(--perron-color-surface-default) 60%, transparent);
+}

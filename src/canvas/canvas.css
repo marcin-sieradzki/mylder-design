@@ -1,0 +1,12 @@
+/* A screen fills its frame; the screen's own surfaces lie on the page's default surface. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--perron-color-surface-default);
+  overflow: hidden;
+}
