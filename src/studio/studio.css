@@ -199,14 +199,6 @@ a {
   background: var(--perron-color-surface-inset);
 }
 
-/* The blocks in each of the inspector's sections, 8 px apart, as Perron's Section stacks them
-   from its next release on */
-.studio-inspector .pn-Section-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--perron-space-200);
-}
-
 .studio-inspector-row {
   display: flex;
   flex-wrap: wrap;
