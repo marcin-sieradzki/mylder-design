@@ -1,6 +1,7 @@
-// The board: a design's screens side by side in their frames, at a zoom that fits them to the
-// board's height, then its explorations, each with why it was set aside.
-import { IconButton, Text, Button, Tag } from '@mylder/perron'
+// The board: a design's screens side by side in their frames, each under its index and name, at a
+// zoom that fits the row to the board, then its explorations, each with why it was set aside
+// beside it.
+import { IconButton, Text, Button } from '@mylder/perron'
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { Theme } from '../canvas/protocol.ts'
 import type { Edit } from '../draft/edits.ts'
@@ -8,6 +9,7 @@ import { DEVICE_SIZE, type Design, type Exploration, type Screen } from '../desi
 import { Icon } from '../kit/Icon.tsx'
 import { Frame, type Mode } from './Frame.tsx'
 import { h2 } from '../kit/headings.tsx'
+import { indexOf } from './screen-index.ts'
 
 export interface Selection {
   screen: string
@@ -24,6 +26,8 @@ export interface BoardProps {
   /** Changes when every screen should load afresh */
   visit: number
   selection?: Selection
+  /** The screen picked in the screens list, or the one last clicked */
+  current?: string
   onSelect: (selection: Selection | undefined) => void
   onTextEdit: (screen: string, node: string, text: string, was: string) => void
   onDocument: (screenId: string, document: Document | undefined) => void
@@ -38,13 +42,16 @@ export function Board(props: BoardProps) {
   const board = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
 
-  // the screens' height fits the board, and the widest screen its width
+  // the tallest screen fits the board's height, and the row of screens, gaps and all, its width
   const fit = useCallback(() => {
     const height = board.current?.clientHeight ?? 0
     const width = board.current?.clientWidth ?? 0
     const tallest = Math.max(...design.screens.map((s) => DEVICE_SIZE[s.device].height))
-    const widest = Math.max(...design.screens.map((s) => DEVICE_SIZE[s.device].width))
-    const fits = Math.min((height - LABEL_ROOM) / tallest, (width - LABEL_ROOM) / widest)
+    const row = board.current?.querySelector('.studio-board-row')
+    const gap = row ? parseFloat(getComputedStyle(row).columnGap) || 0 : 0
+    const gaps = gap * (design.screens.length - 1)
+    const total = design.screens.reduce((sum, s) => sum + DEVICE_SIZE[s.device].width, 0)
+    const fits = Math.min((height - LABEL_ROOM) / tallest, (width - LABEL_ROOM - gaps) / total)
     if (height > 0) setScale(Math.min(1, Math.max(0.2, fits)))
   }, [design.screens])
 
@@ -61,11 +68,12 @@ export function Board(props: BoardProps) {
     <div className="studio-board">
       <div className="studio-board-scroll" ref={board}>
         <div className="studio-board-row">
-          {design.screens.map((screen) => (
+          {design.screens.map((screen, i) => (
             <BoardFrame
               key={`${screen.id}/${props.visit}`}
               {...props}
               screen={screen}
+              index={indexOf(i, 'screen')}
               scale={scale}
             />
           ))}
@@ -109,16 +117,23 @@ export function Board(props: BoardProps) {
 function BoardFrame({
   design,
   screen,
+  index,
   scale,
   theme,
   mode,
   tweaks,
   edits,
   selection,
+  current,
   onSelect,
   onTextEdit,
   onDocument,
-}: BoardProps & { screen: Screen | Exploration; scale: number }) {
+}: BoardProps & {
+  screen: Screen | Exploration
+  /** The screen's index, beside its name; an exploration's name says its letter */
+  index?: string
+  scale: number
+}) {
   const verdict = 'verdict' in screen ? screen.verdict : undefined
   const select = useCallback(
     (node: string | undefined) => onSelect(node ? { screen: screen.id, node } : undefined),
@@ -129,33 +144,50 @@ function BoardFrame({
     (node: string, text: string, was: string) => onTextEdit(screen.id, node, text, was),
     [onTextEdit, screen.id],
   )
-  return (
+  const frame = (
+    <Frame
+      designId={design.id}
+      screen={screen}
+      theme={theme}
+      scale={scale}
+      tweaks={tweaks}
+      edits={screenEdits}
+      mode={mode}
+      selected={selection?.screen === screen.id ? selection.node : undefined}
+      onSelect={select}
+      onTextEdit={textEdit}
+      onDocument={onDocument}
+    />
+  )
+  return verdict ? (
     <figure
       className="studio-board-frame"
+      data-screen={screen.id}
+      data-current={current === screen.id || undefined}
+      data-exploration
+    >
+      {frame}
+      <figcaption className="studio-board-verdict">
+        <Text variant="label">{screen.name}</Text>
+        <Text variant="caption" emphasis="secondary">
+          {verdict}
+        </Text>
+      </figcaption>
+    </figure>
+  ) : (
+    <figure
+      className="studio-board-frame"
+      data-screen={screen.id}
+      data-current={current === screen.id || undefined}
       style={{ width: DEVICE_SIZE[screen.device].width * scale }}
     >
       <figcaption className="studio-board-label">
+        <Text variant="data-sm" emphasis="tertiary">
+          {index}
+        </Text>{' '}
         <Text variant="label">{screen.name}</Text>
-        <Tag variant="dashed">{screen.device === 'phone' ? 'Phone' : 'Desktop'}</Tag>
       </figcaption>
-      <Frame
-        designId={design.id}
-        screen={screen}
-        theme={theme}
-        scale={scale}
-        tweaks={tweaks}
-        edits={screenEdits}
-        mode={mode}
-        selected={selection?.screen === screen.id ? selection.node : undefined}
-        onSelect={select}
-        onTextEdit={textEdit}
-        onDocument={onDocument}
-      />
-      {verdict || screen.note ? (
-        <Text variant="caption" emphasis="secondary" className="studio-board-note">
-          {verdict ?? screen.note}
-        </Text>
-      ) : null}
+      {frame}
     </figure>
   )
 }

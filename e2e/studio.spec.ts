@@ -20,7 +20,7 @@ async function openDesign(page: Page) {
 test('the gallery lists the designs and cannot generate', async ({ page }) => {
   await page.goto('')
   await expect(page.getByRole('heading', { level: 1, name: 'Designs for Mylder' })).toBeVisible()
-  await expect(page.locator('.studio-card').first()).toBeVisible()
+  await expect(page.getByRole('table', { name: 'Designs' }).getByRole('link').first()).toBeVisible()
   await expect(page.getByText("Generated on the maintainer's machine")).toBeVisible()
   await expect(page.getByRole('button', { name: 'Generate' })).toHaveCount(0)
 })
@@ -40,9 +40,14 @@ test('a visitor edits a draft that stays in their browser', async ({ page }) => 
   await expect(text).toHaveText('Draft text')
   await expect(page.getByText('Draft · 1 edit')).toBeVisible()
 
-  // select a layer and give it a Perron background
+  // select a layer: the inspector brings its Element tab forward
   await heading.click()
-  await expect(page.getByLabel('Inspector').getByText('Element', { exact: true })).toBeVisible()
+  const inspector = page.getByRole('complementary', { name: 'Inspector' })
+  await expect(inspector.getByRole('tab', { name: 'Element' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  )
+  await expect(inspector.locator('[data-layer-name]')).toContainText('City sheet')
 
   // the draft survives a reload
   await page.reload()
@@ -55,6 +60,16 @@ test('a visitor edits a draft that stays in their browser', async ({ page }) => 
   await expect(page.getByText('Draft mode', { exact: true })).toBeVisible()
 })
 
+test('a screen picked in the list is the current one on the board', async ({ page }) => {
+  await openDesign(page)
+  const nav = page.getByRole('navigation', { name: 'Design' })
+  const second = nav.getByRole('list', { name: 'Screens' }).getByRole('button').nth(1)
+  await second.click()
+  await expect(second).toHaveAttribute('aria-current', 'true')
+  await expect(page.locator('.studio-board-frame[data-current]')).toHaveCount(1)
+  await expect(page.locator('.studio-board-frame').nth(1)).toHaveAttribute('data-current', 'true')
+})
+
 test('undo and redo step through the draft', async ({ page }) => {
   await openDesign(page)
   const text = firstScreen(page).locator(TEXT)
@@ -64,6 +79,7 @@ test('undo and redo step through the draft', async ({ page }) => {
   await page.keyboard.type('Changed')
   await page.keyboard.press('Enter')
   await expect(text).toHaveText('Changed')
+  await page.getByRole('tab', { name: 'Draft' }).click()
   await page.getByRole('button', { name: 'Undo', exact: true }).click()
   await expect(text).toHaveText(before)
   await page.getByRole('button', { name: 'Redo', exact: true }).click()
@@ -79,13 +95,16 @@ test('interact mode leaves clicks to the screen', async ({ page }) => {
   await firstScreen(page)
     .locator(LAYER)
     .click({ position: { x: 20, y: 20 } })
+  await page.getByRole('tab', { name: 'Element' }).click()
   await expect(page.getByText('Switch to Edit to change a screen')).toBeVisible()
 })
 
 test('a tweak reaches every screen', async ({ page }) => {
   await openDesign(page)
-  const tweaks = page.getByLabel('Inspector').locator('.studio-inspector-field').first()
-  test.skip((await tweaks.count()) === 0, 'the design has no tweaks')
+  const tab = page.getByRole('tab', { name: /^Tweaks/ })
+  test.skip((await tab.count()) === 0, 'the design has no tweaks')
+  await tab.click()
+  const tweaks = page.getByRole('tabpanel').locator('.studio-inspector-field').first()
   const segments = tweaks.locator('button, [role="radio"]')
   await segments.last().click()
   const attribute = await firstScreen(page)
