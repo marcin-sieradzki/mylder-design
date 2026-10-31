@@ -1,7 +1,7 @@
 // The prompt box. On the maintainer's machine, under `npm run dev`, it runs Claude Code with the
 // design skill: a brief makes a new design, a change revises the open one. Everywhere else, and
 // on the public site, it says where designs come from instead.
-import { Alert, Button, Surface, Text, TextArea } from '@mylder/perron'
+import { Alert, Button, Text, TextArea } from '@mylder/perron'
 import { useState } from 'react'
 import type { GenerateEvent } from '../generate/events.ts'
 import { startRun, stopRun, useRun } from '../generate/run.ts'
@@ -25,9 +25,10 @@ interface PromptPanelProps {
   label: string
   placeholder: string
   action: string
+  rows: number
 }
 
-function PromptPanel({ designId, label, placeholder, action }: PromptPanelProps) {
+function PromptPanel({ designId, label, placeholder, action, rows }: PromptPanelProps) {
   const run = useRun()
   const [prompt, setPrompt] = useState('')
   // the run shows where it was started: on its design's page, or in the gallery for a new one
@@ -50,11 +51,11 @@ function PromptPanel({ designId, label, placeholder, action }: PromptPanelProps)
     )
 
   return (
-    <Surface variant="raised" className="studio-prompt" data-running={generator.running}>
+    <div className="studio-prompt" data-running={generator.running}>
       <TextArea
         label={label}
         placeholder={placeholder}
-        rows={3}
+        rows={rows}
         value={prompt}
         onChange={(event) => setPrompt(event.target.value)}
         disabled={generator.running}
@@ -67,12 +68,13 @@ function PromptPanel({ designId, label, placeholder, action }: PromptPanelProps)
                 ? 'Claude is working. New screens appear on the board as they are written.'
                 : 'Claude is working on another design.'}
             </Text>
-            <Button variant="outline" onClick={generator.stop}>
+            <Button variant="outline" size="small" onClick={generator.stop}>
               Stop
             </Button>
           </>
         ) : (
           <Button
+            size="small"
             color="brand"
             disabled={!prompt.trim()}
             onClick={() => void generator.start(prompt.trim())}
@@ -100,7 +102,7 @@ function PromptPanel({ designId, label, placeholder, action }: PromptPanelProps)
           {line(generator.outcome)}
         </Alert>
       ) : null}
-    </Surface>
+    </div>
   )
 }
 
@@ -110,6 +112,7 @@ export function NewDesign() {
       label="New design"
       placeholder="A feature for Mylder, such as a replay of this morning's rush hour"
       action="Generate"
+      rows={5}
     />
   )
 }
@@ -121,6 +124,7 @@ export function ReviseDesign({ designId }: { designId: string }) {
       label="Change this design"
       placeholder="What to change, such as a calmer scrubber or a Danish phone screen"
       action="Revise"
+      rows={3}
     />
   )
 }

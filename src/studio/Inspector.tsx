@@ -1,5 +1,6 @@
-// The inspector: the visitor's draft (undo, redo, start over, copy as a prompt), the element they
-// selected and what they can change on it, the design's tweaks, and the brief it came from.
+// The inspector, in four tabs: the visitor's draft (undo, redo, start over, copy as a prompt), the
+// element they selected and what they can change on it, the design's tweaks, and the brief it came
+// from. Selecting an element on the board brings its tab forward.
 import {
   Alert,
   Button,
@@ -7,6 +8,10 @@ import {
   Segment,
   SegmentedControl,
   Select,
+  Tab,
+  Tabs,
+  TabsList,
+  TabsPanel,
   Text,
   TextField,
   Toast,
@@ -59,6 +64,13 @@ export function Inspector({
 }: InspectorProps) {
   const { draft } = controls
   const [copied, setCopied] = useState(false)
+  const [tab, setTab] = useState('draft')
+  // a new selection on the board shows the Element tab, adjusted while rendering
+  const [shown, setShown] = useState(selection)
+  if (selection !== shown) {
+    setShown(selection)
+    if (selection) setTab('element')
+  }
   const count = draft.edits.length
 
   const copyPrompt = async () => {
@@ -73,115 +85,140 @@ export function Inspector({
 
   return (
     <aside className="studio-inspector" aria-label="Inspector">
-      <Section title="Your draft">
-        <Text variant="body-sm" emphasis="secondary">
-          {count === 0
-            ? 'No edits yet. They stay in this browser and never change the saved design.'
-            : `${count} ${count === 1 ? 'edit' : 'edits'}, kept in this browser. The saved design doesn’t change.`}
-        </Text>
-        {controls.stale ? (
-          <Alert color="warning" title="The design has changed">
-            It was updated after you made this draft, so some edits may land on the wrong element.
-          </Alert>
-        ) : null}
-        <div className="studio-inspector-row">
-          <Button
-            variant="outline"
-            size="small"
-            onClick={controls.undo}
-            disabled={!controls.canUndo}
-          >
-            Undo
-          </Button>
-          <Button
-            variant="outline"
-            size="small"
-            onClick={controls.redo}
-            disabled={!controls.canRedo}
-          >
-            Redo
-          </Button>
-          <Button
-            variant="outline"
-            size="small"
-            onClick={() => {
-              controls.reset()
-              onSelect(undefined)
-            }}
-            disabled={count === 0 && Object.keys(draft.tweaks).length === 0}
-          >
-            Start over
-          </Button>
-        </div>
-        <div className="studio-inspector-row">
-          <Button
-            variant="outline"
-            size="small"
-            onClick={() => void copyPrompt()}
-            disabled={count === 0 && Object.keys(draft.tweaks).length === 0}
-          >
-            Copy as a prompt for Claude
-          </Button>
-        </div>
-      </Section>
+      <Tabs
+        className="studio-inspector-tabs"
+        value={tab}
+        onChange={(_event, value) => value && setTab(value)}
+      >
+        <TabsList className="studio-inspector-tablist" aria-label="Inspector">
+          <Tab value="draft">Draft</Tab>
+          <Tab value="element">Element</Tab>
+          {design.tweaks?.length ? (
+            <Tab value="tweaks" count={design.tweaks.length}>
+              Tweaks
+            </Tab>
+          ) : null}
+          <Tab value="brief">Brief</Tab>
+        </TabsList>
+        <TabsPanel value="draft" className="studio-inspector-panel">
+          <Section title="Your draft">
+            <Text variant="body-sm" emphasis="secondary">
+              {count === 0
+                ? 'No edits yet. They stay in this browser and never change the saved design.'
+                : `${count} ${count === 1 ? 'edit' : 'edits'}, kept in this browser. The saved design doesn’t change.`}
+            </Text>
+            {controls.stale ? (
+              <Alert color="warning" title="The design has changed">
+                It was updated after you made this draft, so some edits may land on the wrong
+                element.
+              </Alert>
+            ) : null}
+            <div className="studio-inspector-row">
+              <Button
+                variant="outline"
+                size="small"
+                onClick={controls.undo}
+                disabled={!controls.canUndo}
+              >
+                Undo
+              </Button>
+              <Button
+                variant="outline"
+                size="small"
+                onClick={controls.redo}
+                disabled={!controls.canRedo}
+              >
+                Redo
+              </Button>
+              <Button
+                variant="outline"
+                size="small"
+                onClick={() => {
+                  controls.reset()
+                  onSelect(undefined)
+                }}
+                disabled={count === 0 && Object.keys(draft.tweaks).length === 0}
+              >
+                Start over
+              </Button>
+            </div>
+            <div className="studio-inspector-row">
+              <Button
+                variant="outline"
+                size="small"
+                onClick={() => void copyPrompt()}
+                disabled={count === 0 && Object.keys(draft.tweaks).length === 0}
+              >
+                Copy as a prompt for Claude
+              </Button>
+            </div>
+          </Section>
+        </TabsPanel>
 
-      {editing ? (
-        <ElementFields
-          controls={controls}
-          selection={selection}
-          onSelect={onSelect}
-          documentOf={documentOf}
-        />
-      ) : (
-        <Section title="Edit">
-          <Text variant="body-sm" emphasis="secondary">
-            Switch to Edit to change a screen: click any part of it to select it, or double-click
-            text to type over it.
-          </Text>
-        </Section>
-      )}
-
-      {design.tweaks?.length ? (
-        <Section title="Tweaks">
-          {design.tweaks.map((tweak) =>
-            tweak.options.length <= 4 ? (
-              <div key={tweak.id} className="studio-inspector-field">
-                <Text variant="label" id={`tweak-${tweak.id}`}>
-                  {tweak.label}
-                </Text>
-                <SegmentedControl
-                  aria-labelledby={`tweak-${tweak.id}`}
-                  value={controls.tweakValue(tweak.id)}
-                  onChange={(_event, value) => value && controls.setTweak(tweak.id, value)}
-                >
-                  {tweak.options.map((option) => (
-                    <Segment key={option.value} value={option.value}>
-                      {option.label}
-                    </Segment>
-                  ))}
-                </SegmentedControl>
-              </div>
-            ) : (
-              <Select
-                key={tweak.id}
-                label={tweak.label}
-                items={tweak.options}
-                value={controls.tweakValue(tweak.id)}
-                onChange={(_event, value) => value && controls.setTweak(tweak.id, value)}
-              />
-            ),
+        <TabsPanel value="element" className="studio-inspector-panel">
+          {editing ? (
+            <ElementFields
+              controls={controls}
+              selection={selection}
+              onSelect={onSelect}
+              documentOf={documentOf}
+            />
+          ) : (
+            <Section title="Element">
+              <Text variant="body-sm" emphasis="secondary">
+                Switch to Edit to change a screen: click any part of it to select it, or
+                double-click text to type over it.
+              </Text>
+            </Section>
           )}
-        </Section>
-      ) : null}
+        </TabsPanel>
 
-      <Section title="Brief">
-        <Text variant="body-sm" emphasis="secondary" className="studio-inspector-brief">
-          {design.brief}
-        </Text>
-        <Text variant="data-sm" emphasis="tertiary">
-          Generated {design.date}
-        </Text>
-      </Section>
+        {design.tweaks?.length ? (
+          <TabsPanel value="tweaks" className="studio-inspector-panel">
+            <Section title="Tweaks">
+              {design.tweaks.map((tweak) =>
+                tweak.options.length <= 4 ? (
+                  <div key={tweak.id} className="studio-inspector-field">
+                    <Text variant="label" id={`tweak-${tweak.id}`}>
+                      {tweak.label}
+                    </Text>
+                    <SegmentedControl
+                      aria-labelledby={`tweak-${tweak.id}`}
+                      value={controls.tweakValue(tweak.id)}
+                      onChange={(_event, value) => value && controls.setTweak(tweak.id, value)}
+                    >
+                      {tweak.options.map((option) => (
+                        <Segment key={option.value} value={option.value}>
+                          {option.label}
+                        </Segment>
+                      ))}
+                    </SegmentedControl>
+                  </div>
+                ) : (
+                  <Select
+                    key={tweak.id}
+                    label={tweak.label}
+                    items={tweak.options}
+                    value={controls.tweakValue(tweak.id)}
+                    onChange={(_event, value) => value && controls.setTweak(tweak.id, value)}
+                  />
+                ),
+              )}
+            </Section>
+          </TabsPanel>
+        ) : null}
+
+        <TabsPanel value="brief" className="studio-inspector-panel">
+          <Section title="Brief">
+            <Text variant="body-sm" emphasis="secondary" className="studio-inspector-brief">
+              {design.brief}
+            </Text>
+            <Text variant="data-sm" emphasis="tertiary">
+              Generated {design.date}
+            </Text>
+          </Section>
+        </TabsPanel>
+      </Tabs>
 
       <Toast open={copied} onClose={() => setCopied(false)} color="success" title="Copied">
         Paste it into Claude Code in the mylder-design repository.

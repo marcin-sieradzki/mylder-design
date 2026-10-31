@@ -1,5 +1,6 @@
-/* The studio's layout, in Perron's tokens: a top bar, then the gallery's grid of cards, or a
-   design's screens list, board and inspector side by side. */
+/* The studio's layout, in Perron's tokens: a ruled tool with everything docked. A top bar, then
+   the gallery's column and table of designs, or a design's screens list, board and inspector side
+   by side. */
 
 html,
 body,
@@ -23,7 +24,7 @@ a {
   align-items: center;
   gap: var(--perron-space-500);
   min-block-size: var(--perron-size-top-bar);
-  padding-inline: var(--perron-space-400);
+  padding: var(--perron-space-100) var(--perron-space-400);
   border-block-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
   background: var(--perron-color-surface-raised);
 }
@@ -56,98 +57,148 @@ a {
   margin-inline-start: auto;
 }
 
-/* Gallery */
+/* Gallery: the intro and New design in a column on the left, the designs as a ruled table */
 .studio-gallery {
-  display: flex;
-  flex-direction: column;
-  min-block-size: 100%;
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100%;
 }
 
-.studio-gallery-main {
-  display: grid;
+.studio-gallery > .studio-bar {
+  grid-column: 1 / -1;
+}
+
+.studio-gallery-side {
+  display: flex;
+  flex-direction: column;
   gap: var(--perron-space-600);
-  inline-size: min(1160px, 100% - 2 * var(--perron-space-400));
-  margin-inline: auto;
-  padding-block: var(--perron-space-800);
+  overflow: auto;
+  padding: var(--perron-space-600);
+  border-inline-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+  background: var(--perron-color-surface-raised);
 }
 
 .studio-gallery-intro {
   display: grid;
   gap: var(--perron-space-300);
-  max-inline-size: 62ch;
 }
 
 .studio-gallery-intro h1 {
   margin: 0;
 }
 
-.studio-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
-  gap: var(--perron-space-500);
+.studio-gallery-foot {
+  margin-block-start: auto;
 }
 
-.studio-card {
+.studio-gallery-main {
   display: grid;
-  overflow: hidden;
-  border: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
-  border-radius: var(--perron-radius-lg);
-  background: var(--perron-color-surface-raised);
+  align-content: start;
+  gap: var(--perron-space-500);
+  overflow: auto;
+  padding: var(--perron-space-600) var(--perron-space-800);
+}
+
+.studio-designs {
+  inline-size: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.studio-designs-col-preview {
+  inline-size: calc(240px + 2 * var(--perron-space-300));
+}
+
+.studio-designs-col-number {
+  inline-size: 120px;
+}
+
+.studio-designs th,
+.studio-designs td {
+  padding: var(--perron-space-300);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.studio-designs thead th {
+  padding-block: 0 var(--perron-space-300);
+  border-block-end: var(--perron-border-width-025) solid var(--perron-color-border-strong);
+  vertical-align: bottom;
+}
+
+.studio-designs .studio-designs-number {
+  text-align: end;
+}
+
+/* a row is one link: the title's link covers the whole row */
+.studio-designs-row {
+  position: relative;
+  border-block-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+}
+
+.studio-designs-row:hover {
+  background: var(--perron-color-surface-hover);
+}
+
+.studio-designs-row:has(a:focus-visible) {
+  outline: var(--perron-focus-width) solid var(--perron-color-border-focus);
+  outline-offset: calc(-1 * var(--perron-focus-width));
+}
+
+.studio-designs-design {
+  font-weight: inherit;
+}
+
+.studio-designs-design > * {
+  display: block;
+  max-inline-size: 60ch;
+}
+
+.studio-designs-design > * + * {
+  margin-block-start: var(--perron-space-100);
+}
+
+.studio-designs-design a {
   text-decoration: none;
 }
 
-.studio-card:hover {
-  border-color: var(--perron-color-border-strong);
+.studio-designs-design a:focus-visible {
+  outline: none;
 }
 
-.studio-card:focus-visible {
-  outline: var(--perron-focus-width) solid var(--perron-color-border-focus);
-  outline-offset: var(--perron-border-width-050);
+.studio-designs-design a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
 }
 
-.studio-card-preview {
+.studio-designs-preview {
   display: grid;
   place-items: center;
-  block-size: 225px;
+  inline-size: 240px;
+  block-size: 150px;
   overflow: hidden;
-  border-block-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+  border-radius: var(--perron-radius-lg);
+  outline: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
   background: var(--perron-color-map-land);
 }
 
-.studio-card-preview .studio-frame {
+.studio-designs-preview .studio-frame {
   border-radius: 0;
   box-shadow: none;
   outline: none;
 }
 
-.studio-card-body {
-  display: grid;
-  gap: var(--perron-space-200);
-  padding: var(--perron-space-400);
+.studio-designs-next {
+  border: var(--perron-border-width-025) dashed var(--perron-color-border-strong);
+  border-radius: var(--perron-radius-lg);
 }
 
-.studio-card-body h2 {
-  margin: 0;
-}
-
-.studio-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--perron-space-200);
-}
-
-.studio-gallery-foot {
-  margin-block-start: auto;
-  padding: var(--perron-space-500) var(--perron-space-400);
-  border-block-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
-  text-align: center;
-}
-
-/* Editor */
+/* Editor: the screens list, the board and the inspector, docked side by side */
 .studio-editor {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 320px;
+  grid-template-columns: 264px minmax(0, 1fr) 336px;
   grid-template-rows: auto minmax(0, 1fr);
   block-size: 100%;
 }
@@ -156,47 +207,115 @@ a {
   grid-column: 1 / -1;
 }
 
-.studio-editor-side,
-.studio-inspector {
+.studio-editor-side {
   display: flex;
   flex-direction: column;
-  gap: var(--perron-space-600);
+  gap: var(--perron-space-400);
   overflow: auto;
-  padding: var(--perron-space-400);
+  padding: var(--perron-space-400) var(--perron-space-200);
+  border-inline-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
   background: var(--perron-color-surface-raised);
 }
 
-.studio-editor-side {
-  border-inline-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
-}
-
-.studio-inspector {
-  border-inline-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
-}
-
-.studio-editor-screens {
+.studio-nav-group {
   display: grid;
-  gap: var(--perron-space-300);
+  gap: var(--perron-space-200);
+}
+
+.studio-nav-group h2,
+.studio-editor-switch {
+  margin: 0;
+  padding-inline: var(--perron-space-300);
+}
+
+.studio-nav-list {
+  display: grid;
+  gap: var(--perron-space-050);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.studio-editor-screens li {
+.studio-nav-row {
   display: grid;
-  gap: var(--perron-space-050);
+  grid-template-columns: var(--perron-space-800) minmax(0, 1fr);
+  align-items: baseline;
+  row-gap: var(--perron-space-050);
+  inline-size: 100%;
+  padding: var(--perron-space-200) var(--perron-space-300);
+  border: 0;
+  border-radius: var(--perron-radius-md);
+  background: none;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.studio-nav-row:hover {
+  background: var(--perron-color-surface-hover);
+}
+
+.studio-nav-row[aria-current='true'] {
+  background: var(--perron-color-surface-selected);
+}
+
+.studio-nav-row:focus-visible {
+  outline: var(--perron-focus-width) solid var(--perron-color-border-focus);
+  outline-offset: calc(-1 * var(--perron-focus-width));
+}
+
+.studio-nav-note {
+  grid-column: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .studio-editor-switch {
   display: flex;
   align-items: center;
   gap: var(--perron-space-200);
+  padding-block-start: var(--perron-space-200);
+}
+
+.studio-editor-revise {
+  margin-block-start: auto;
+  padding: var(--perron-space-400) var(--perron-space-300) 0;
+  border-block-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
 }
 
 .studio-editor-board {
   position: relative;
   min-block-size: 0;
   background: var(--perron-color-surface-inset);
+}
+
+.studio-inspector {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  border-inline-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+  background: var(--perron-color-surface-raised);
+}
+
+.studio-inspector-tabs {
+  flex: 1;
+  min-block-size: 0;
+  gap: 0;
+}
+
+.studio-inspector-tablist {
+  flex: none;
+  padding-inline: var(--perron-space-200);
+}
+
+.studio-inspector-panel {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+  padding: var(--perron-space-400);
 }
 
 .studio-inspector-row {
@@ -207,7 +326,12 @@ a {
 
 .studio-inspector-field {
   display: grid;
+  justify-items: start;
   gap: var(--perron-space-150);
+}
+
+.studio-inspector-field + .studio-inspector-field {
+  margin-block-start: var(--perron-space-200);
 }
 
 .studio-inspector-brief {
@@ -240,16 +364,43 @@ a {
   margin: 0;
 }
 
+.studio-board-frame[data-current] .studio-frame {
+  outline: var(--perron-border-width-050) solid var(--perron-color-border-focus);
+  outline-offset: var(--perron-border-width-050);
+}
+
+.studio-board-frame[data-exploration] {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--perron-space-300);
+}
+
 .studio-board-label {
   display: flex;
-  align-items: center;
-  gap: var(--perron-space-200);
+  align-items: baseline;
+  gap: var(--perron-space-150);
+}
+
+.studio-board-label > :first-child {
+  flex: none;
+}
+
+.studio-board-verdict {
+  display: grid;
+  gap: var(--perron-space-100);
+  inline-size: 168px;
 }
 
 .studio-board-explorations {
   display: grid;
   gap: var(--perron-space-300);
   margin-block-start: var(--perron-space-800);
+  padding-block-start: var(--perron-space-300);
+  border-block-start: var(--perron-border-width-025) solid var(--perron-color-border-strong);
+}
+
+.studio-board-explorations > .studio-board-row {
+  gap: var(--perron-space-800);
 }
 
 .studio-board-explorations h2 {
@@ -258,17 +409,15 @@ a {
 
 .studio-board-zoom {
   position: absolute;
-  inset-block-end: var(--perron-size-panel-gap);
-  inset-inline-end: var(--perron-size-panel-gap);
+  inset-block-end: var(--perron-space-400);
+  inset-inline-end: var(--perron-space-400);
   display: flex;
   align-items: center;
   gap: var(--perron-space-100);
   padding: var(--perron-space-100);
-  border-radius: var(--perron-radius-lg);
-  background: var(--perron-color-surface-overlay);
+  border-radius: var(--perron-radius-md);
+  background: var(--perron-color-surface-raised);
   box-shadow: var(--perron-shadow-panel);
-  backdrop-filter: blur(var(--perron-effect-glass-blur))
-    saturate(var(--perron-effect-glass-saturate));
 }
 
 .studio-board-zoom-value {
@@ -304,7 +453,6 @@ a {
 .studio-prompt {
   display: grid;
   gap: var(--perron-space-300);
-  padding: var(--perron-space-400);
 }
 
 .studio-prompt-actions {
@@ -324,12 +472,35 @@ a {
   list-style: none;
 }
 
-/* Narrow windows: the board on top, the panels below it */
+/* Narrow windows: the column above the designs; the board on top, the panels below it */
 @media (width < 1100px) {
+  .studio-gallery,
   .studio-editor {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 70vh auto auto;
     block-size: auto;
+  }
+
+  .studio-gallery {
+    grid-template-rows: auto;
+  }
+
+  .studio-gallery-side {
+    border: 0;
+    border-block-end: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
+  }
+
+  .studio-gallery-main {
+    overflow: visible;
+    padding: var(--perron-space-400);
+  }
+
+  .studio-designs-col-preview,
+  .studio-designs tr > :first-child {
+    display: none;
+  }
+
+  .studio-editor {
+    grid-template-rows: auto 70vh auto auto;
   }
 
   .studio-editor-board {
@@ -343,8 +514,20 @@ a {
     border-block-start: var(--perron-border-width-025) solid var(--perron-color-border-subtle);
   }
 
+  .studio-inspector-panel {
+    overflow: visible;
+  }
+
   .studio-bar {
     flex-wrap: wrap;
     padding-block: var(--perron-space-200);
+  }
+}
+
+/* A phone: the designs' title and screens only */
+@media (width < 640px) {
+  .studio-designs col:nth-child(n + 4),
+  .studio-designs tr > :nth-child(n + 4) {
+    display: none;
   }
 }
